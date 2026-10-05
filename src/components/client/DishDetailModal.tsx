@@ -144,23 +144,25 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({ item, onClose 
           {/* Dish Header Info */}
           <div className="space-y-2 text-left">
             <div className="flex items-start justify-between gap-3">
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-snug">
+              <h2 className={`text-2xl font-black tracking-tight leading-snug ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 {item.name}
               </h2>
-              <div className="flex items-center gap-1 text-slate-700 text-xs font-semibold bg-white/60 border border-white/80 px-2.5 py-1 rounded-full shrink-0 shadow-sm">
-                <Clock className="w-3.5 h-3.5 text-amber-600" />
+              <div className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 shadow-sm border ${
+                isDark ? 'bg-white/10 text-amber-300 border-white/10' : 'bg-white/60 text-slate-700 border-white/80'
+              }`}>
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
                 <span>{item.prepTime}</span>
               </div>
             </div>
 
-            <p className="text-slate-600 text-xs sm:text-sm leading-relaxed font-normal">
+            <p className={`text-xs sm:text-sm leading-relaxed font-normal ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
               {item.description}
             </p>
 
             {/* Clean unboxed metadata */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-500">
+            <div className={`flex flex-wrap items-center gap-2 pt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {item.calories && (
-                <span className="flex items-center gap-1 text-slate-700 font-medium">
+                <span className={`flex items-center gap-1 font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                   <Flame className="w-3.5 h-3.5 text-orange-500" />
                   {item.calories}
                 </span>
@@ -171,15 +173,17 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({ item, onClose 
               {item.dietary.includes('gluten_free') && <span>Sans Gluten</span>}
               {item.dietary.includes('halal') && <span>Viande Halal</span>}
               <span>·</span>
-              <span className="text-emerald-700 font-medium">TVA incluse</span>
+              <span className="text-emerald-500 font-medium">TVA incluse</span>
             </div>
 
             {/* EU 14 Allergens alert if present */}
             {item.allergens.length > 0 && (
-              <div className="mt-2 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2 text-xs text-amber-900">
-                <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className={`mt-2 p-2.5 rounded-2xl border flex items-start gap-2 text-xs ${
+                isDark ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-amber-500/10 border-amber-500/20 text-amber-900'
+              }`}>
+                <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-semibold text-amber-950">Allergènes : </span>
+                  <span className={`font-semibold ${isDark ? 'text-amber-100' : 'text-amber-950'}`}>Allergènes : </span>
                   {item.allergens.join(', ')}
                 </div>
               </div>
@@ -189,7 +193,7 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({ item, onClose 
           {/* Cooking choice if meat/burger */}
           {item.requiresCooking && (
             <div className="space-y-2 pt-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                 Cuisson souhaitée
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -200,7 +204,9 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({ item, onClose 
                     onClick={() => setCooking(option)}
                     className={`py-2 px-3 rounded-2xl text-xs font-semibold transition-all ${
                       cooking === option
-                        ? 'bg-[#121418] text-white shadow-md'
+                        ? isDark ? 'bg-amber-500 text-slate-950 font-bold shadow-md' : 'bg-[#121418] text-white shadow-md'
+                        : isDark
+                        ? 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10'
                         : 'bg-white/70 border border-white/80 text-slate-700 hover:bg-white'
                     }`}
                   >
@@ -214,7 +220,7 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({ item, onClose 
           {/* Paid Extras */}
           {item.availableExtras.length > 0 && (
             <div className="space-y-2 pt-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                 Suppléments & Accompagnements
               </label>
               <div className="space-y-2">
@@ -227,23 +233,23 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({ item, onClose 
                       onClick={() => toggleExtra(extra)}
                       className={`w-full flex items-center justify-between p-3 rounded-2xl border text-left transition-all ${
                         checked
-                          ? 'bg-amber-500/15 border-amber-500/40 text-slate-900'
-                          : 'bg-white/60 border-white/70 text-slate-700 hover:bg-white/80'
+                          ? isDark ? 'bg-amber-500/20 border-amber-500/50 text-white' : 'bg-amber-500/15 border-amber-500/40 text-slate-900'
+                          : isDark ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white/60 border-white/70 text-slate-700 hover:bg-white/80'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <div
                           className={`w-5 h-5 rounded-lg flex items-center justify-center border transition-colors ${
                             checked
-                              ? 'bg-[#121418] border-[#121418] text-white'
-                              : 'border-slate-300 bg-white'
+                              ? isDark ? 'bg-amber-500 border-amber-500 text-slate-950' : 'bg-[#121418] border-[#121418] text-white'
+                              : isDark ? 'border-white/20 bg-white/5' : 'border-slate-300 bg-white'
                           }`}
                         >
                           {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </div>
                         <span className="text-xs font-medium">{extra.name}</span>
                       </div>
-                      <span className="text-xs font-mono font-bold text-slate-900">
+                      <span className={`text-xs font-mono font-bold ${isDark ? 'text-amber-300' : 'text-slate-900'}`}>
                         +{formatCurrency(extra.price, settings.currency)}
                       </span>
                     </button>
@@ -255,7 +261,7 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({ item, onClose 
 
           {/* Special Brigade instructions */}
           <div className="space-y-1.5 pt-1">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+            <label className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
               Instructions spéciales brigade
             </label>
             <input
@@ -263,7 +269,11 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({ item, onClose 
               value={specialNotes}
               onChange={e => setSpecialNotes(e.target.value)}
               placeholder="Ex: Sauce à part, sans sel ajouté..."
-              className="w-full px-4 py-2.5 rounded-2xl bg-white/70 border border-white/80 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-colors shadow-sm"
+              className={`w-full px-4 py-2.5 rounded-2xl border text-xs placeholder-slate-400 focus:outline-none transition-colors shadow-sm ${
+                isDark 
+                  ? 'bg-white/10 border-white/15 text-white focus:border-amber-400' 
+                  : 'bg-white/70 border-white/80 text-slate-900 focus:border-slate-900'
+              }`}
             />
           </div>
         </div>
