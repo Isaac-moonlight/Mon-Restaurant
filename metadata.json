@@ -1,0 +1,6 @@
+{
+  "name": "Mon Restaurant - Menu Digital & POS / KDS",
+  "description": "Menu digital mobile-first haut de gamme, système de caisse POS, KDS cuisine en temps réel et facturation / ERP pour restaurant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
