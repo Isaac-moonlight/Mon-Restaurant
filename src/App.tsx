@@ -7,6 +7,7 @@ import { FloorPlan2D } from './components/floor/FloorPlan2D';
 import { BillingAndERP } from './components/billing/BillingAndERP';
 import { RestaurantSettingsModal } from './components/settings/RestaurantSettingsModal';
 import { PinModal } from './components/common/PinModal';
+import { RestaurantLogo } from './components/common/RestaurantLogo';
 import {
   UtensilsCrossed,
   ChefHat,
@@ -93,7 +94,8 @@ const MainAppContent: React.FC = () => {
                   <span>Retour Menu Client</span>
                 </button>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
+                  <RestaurantLogo size="sm" isDark={isDark} />
                   <span className={`text-sm font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {settings.name}
                   </span>

@@ -377,22 +377,37 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const unsubOrders = subscribeToOrders(remoteOrders => {
       if (remoteOrders && remoteOrders.length > 0) {
         setOrders(prev => {
+          const prevIds = new Set(prev.map(o => o.id));
+          const hasNewIncoming = remoteOrders.some(
+            o => !prevIds.has(o.id) && (o.status === 'received' || o.status === 'in_kitchen')
+          );
+          if (hasNewIncoming && soundEnabled) {
+            soundFx.playKitchenOrderBell();
+          }
+
           const map = new Map<string, Order>();
           remoteOrders.forEach(o => map.set(o.id, o));
           prev.forEach(o => {
             if (!map.has(o.id)) map.set(o.id, o);
           });
           return Array.from(map.values()).sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
           );
         });
       }
     });
 
-    // 2. Waiter Calls live sync
+    // 2. Waiter Calls live sync (updates active calls and clears resolved calls)
     const unsubCalls = subscribeToWaiterCalls(remoteCalls => {
-      if (remoteCalls && remoteCalls.length > 0) {
-        setWaiterCalls(remoteCalls);
+      if (remoteCalls) {
+        setWaiterCalls(prev => {
+          const prevIds = new Set(prev.map(c => c.id));
+          const hasNewCall = remoteCalls.some(c => !prevIds.has(c.id));
+          if (hasNewCall && soundEnabled) {
+            soundFx.playWaiterCallAlert();
+          }
+          return remoteCalls;
+        });
       }
     });
 

@@ -36,6 +36,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
+import { RestaurantLogo } from '../common/RestaurantLogo';
 
 interface ClientMobileMenuProps {
   onOpenStaffPortal: () => void;
@@ -204,20 +205,23 @@ export const ClientMobileMenu: React.FC<ClientMobileMenuProps> = ({ onOpenStaffP
             </motion.button>
           </div>
 
-          {/* Brand Wordmark (Triple-click secret trigger) */}
+          {/* Brand Wordmark with Real Logo (Triple-click secret trigger) */}
           <div
             onClick={handleLogoClick}
-            className="cursor-pointer select-none text-center group"
+            className="cursor-pointer select-none flex items-center gap-2.5 group"
             title="Mon Restaurant"
           >
-            <motion.h1 
-              whileHover={{ scale: 1.03 }}
-              className={`font-serif-luxury text-lg font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}
-            >
-              {settings.name}
-            </motion.h1>
-            <div className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-amber-400' : 'text-amber-800'}`}>
-              {settings.subtitle}
+            <RestaurantLogo size="sm" isDark={isDark} />
+            <div className="text-left">
+              <motion.h1 
+                whileHover={{ scale: 1.02 }}
+                className={`font-serif-luxury text-base font-black tracking-tight leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}
+              >
+                {settings.name}
+              </motion.h1>
+              <div className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-amber-400' : 'text-amber-800'}`}>
+                {settings.subtitle}
+              </div>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import {
-  getFirestore,
+  initializeFirestore,
   collection,
   doc,
   setDoc,
@@ -9,16 +9,42 @@ import {
   onSnapshot,
   updateDoc,
   deleteDoc,
-  query,
-  orderBy,
   getDocFromServer,
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 import { Order, WaiterCall, RestaurantSettings, MenuItem } from './types/restaurant';
 
-// Initialize Firebase App & Firestore with the provisioned database ID
+// Initialize Firebase App
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+// Initialize Firestore with ignoreUndefinedProperties to prevent Firebase errors on optional fields
+export const db = initializeFirestore(
+  app,
+  {
+    ignoreUndefinedProperties: true,
+  },
+  firebaseConfig.firestoreDatabaseId
+);
+
+// Deep sanitization helper that guarantees no undefined value reaches Firestore
+export function cleanForFirestore<T>(obj: T): T {
+  if (obj === null || obj === undefined) {
+    return null as unknown as T;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => cleanForFirestore(item)) as unknown as T;
+  }
+  if (typeof obj === 'object') {
+    const cleaned: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanForFirestore(value);
+      }
+    }
+    return cleaned as T;
+  }
+  return obj;
+}
 
 // Test Firestore connection on boot
 (async function testConnection() {
@@ -49,11 +75,20 @@ export const subscribeToOrders = (
   onUpdate: (orders: Order[]) => void,
   onError?: (err: Error) => void
 ) => {
-  const q = query(ordersCollection, orderBy('createdAt', 'desc'));
   return onSnapshot(
-    q,
+    ordersCollection,
     snapshot => {
-      const orders = snapshot.docs.map(docSnap => docSnap.data() as Order);
+      const orders = snapshot.docs
+        .map(docSnap => docSnap.data() as Order)
+        .filter(o => o && o.id && o.tableNumber);
+
+      // Sort newest first
+      orders.sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+
       onUpdate(orders);
     },
     error => {
@@ -67,11 +102,19 @@ export const subscribeToWaiterCalls = (
   onUpdate: (calls: WaiterCall[]) => void,
   onError?: (err: Error) => void
 ) => {
-  const q = query(waiterCallsCollection, orderBy('createdAt', 'desc'));
   return onSnapshot(
-    q,
+    waiterCallsCollection,
     snapshot => {
-      const calls = snapshot.docs.map(docSnap => docSnap.data() as WaiterCall);
+      const calls = snapshot.docs
+        .map(docSnap => docSnap.data() as WaiterCall)
+        .filter(c => c && c.id && c.status === 'active');
+
+      calls.sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+
       onUpdate(calls);
     },
     error => {
@@ -127,7 +170,8 @@ export const subscribeToInventory = (
 // Write helpers
 export const syncOrderToFirestore = async (order: Order) => {
   try {
-    await setDoc(doc(db, COLLECTIONS.ORDERS, order.id), order, { merge: true });
+    const payload = cleanForFirestore(order);
+    await setDoc(doc(db, COLLECTIONS.ORDERS, order.id), payload, { merge: true });
   } catch (err) {
     console.error('Error saving order to Firestore:', err);
   }
@@ -135,11 +179,12 @@ export const syncOrderToFirestore = async (order: Order) => {
 
 export const updateOrderStatusInFirestore = async (orderId: string, status: Order['status'], extra?: Partial<Order>) => {
   try {
-    await updateDoc(doc(db, COLLECTIONS.ORDERS, orderId), {
+    const updatePayload = cleanForFirestore({
       status,
       ...extra,
       updatedAt: new Date().toISOString(),
     });
+    await updateDoc(doc(db, COLLECTIONS.ORDERS, orderId), updatePayload);
   } catch (err) {
     console.error('Error updating order status in Firestore:', err);
   }
@@ -147,7 +192,8 @@ export const updateOrderStatusInFirestore = async (orderId: string, status: Orde
 
 export const syncWaiterCallToFirestore = async (call: WaiterCall) => {
   try {
-    await setDoc(doc(db, COLLECTIONS.WAITER_CALLS, call.id), call, { merge: true });
+    const payload = cleanForFirestore(call);
+    await setDoc(doc(db, COLLECTIONS.WAITER_CALLS, call.id), payload, { merge: true });
   } catch (err) {
     console.error('Error saving waiter call to Firestore:', err);
   }
@@ -155,10 +201,8 @@ export const syncWaiterCallToFirestore = async (call: WaiterCall) => {
 
 export const resolveWaiterCallInFirestore = async (callId: string) => {
   try {
-    await updateDoc(doc(db, COLLECTIONS.WAITER_CALLS, callId), {
-      status: 'resolved',
-      resolvedAt: new Date().toISOString(),
-    });
+    // Permanently remove the call from active Firestore list so it never reappears
+    await deleteDoc(doc(db, COLLECTIONS.WAITER_CALLS, callId));
   } catch (err) {
     console.error('Error resolving waiter call in Firestore:', err);
   }
@@ -166,7 +210,8 @@ export const resolveWaiterCallInFirestore = async (callId: string) => {
 
 export const syncSettingsToFirestore = async (settings: RestaurantSettings) => {
   try {
-    await setDoc(doc(db, COLLECTIONS.SETTINGS, 'current'), settings, { merge: true });
+    const payload = cleanForFirestore(settings);
+    await setDoc(doc(db, COLLECTIONS.SETTINGS, 'current'), payload, { merge: true });
   } catch (err) {
     console.error('Error saving settings to Firestore:', err);
   }
@@ -176,12 +221,12 @@ export const updateInventoryItemInFirestore = async (itemId: string, stock: numb
   try {
     await setDoc(
       doc(db, COLLECTIONS.INVENTORY, itemId),
-      {
+      cleanForFirestore({
         itemId,
         stock,
         isAvailable,
         updatedAt: new Date().toISOString(),
-      },
+      }),
       { merge: true }
     );
   } catch (err) {

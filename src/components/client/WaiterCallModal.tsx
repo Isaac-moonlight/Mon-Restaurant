@@ -71,8 +71,10 @@ export const WaiterCallModal: React.FC<WaiterCallModalProps> = ({ onClose }) => 
             <div className="w-14 h-14 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
               <Check className="w-7 h-7 stroke-[3]" />
             </div>
-            <h4 className="text-lg font-black text-slate-900">Appel transmis à la brigade !</h4>
-            <p className="text-xs text-slate-500 max-w-xs mx-auto">
+            <h4 className={`text-lg font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Appel transmis à la brigade !
+            </h4>
+            <p className={`text-xs max-w-xs mx-auto ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
               Un équipier de salle se rend immédiatement à votre Table {currentTable}.
             </p>
           </div>

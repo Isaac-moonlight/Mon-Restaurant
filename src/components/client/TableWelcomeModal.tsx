@@ -3,6 +3,7 @@ import { useRestaurant } from '../../context/RestaurantContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Sparkles, Utensils, Check, ArrowRight, QrCode } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
+import { RestaurantLogo } from '../common/RestaurantLogo';
 
 interface TableWelcomeModalProps {
   onConfirmed: () => void;
@@ -40,21 +41,19 @@ export const TableWelcomeModal: React.FC<TableWelcomeModalProps> = ({ onConfirme
         <div className="absolute -top-12 -right-12 w-36 h-36 bg-amber-400/25 rounded-full blur-2xl pointer-events-none animate-pulse" />
         <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-orange-400/20 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Intro Emblem with viral-style spring animation */}
+        {/* Intro Gastronomic Emblem with viral-style spring animation */}
         <div className="relative flex justify-center pt-2">
           <motion.div
-            initial={{ scale: 0, rotate: -30 }}
+            initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', damping: 14, stiffness: 200, delay: 0.1 }}
-            className="w-20 h-20 rounded-3xl bg-[#14171d] text-white flex items-center justify-center shadow-2xl shadow-black/25 relative ring-4 ring-white/80"
+            className="relative"
           >
-            <span className="font-serif-luxury text-3xl font-black text-amber-300">
-              M
-            </span>
+            <RestaurantLogo size="xl" isDark={isDark} />
             <motion.div
               animate={{ scale: [1, 1.25, 1], rotate: [0, 15, 0] }}
               transition={{ repeat: Infinity, duration: 4 }}
-              className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-md"
+              className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-md z-10"
             >
               <Sparkles className="w-3.5 h-3.5" />
             </motion.div>

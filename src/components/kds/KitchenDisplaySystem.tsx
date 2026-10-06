@@ -42,6 +42,7 @@ export const KitchenDisplaySystem: React.FC = () => {
   const pendingOrders = orders.filter(o => o.status === 'received');
   const cookingOrders = orders.filter(o => o.status === 'in_kitchen');
   const readyOrders = orders.filter(o => o.status === 'ready');
+  const activeWaiterCalls = waiterCalls.filter(c => c.status === 'active');
 
   const handleAdvance = (order: Order) => {
     if (order.status === 'received') {
@@ -271,15 +272,15 @@ export const KitchenDisplaySystem: React.FC = () => {
       </div>
 
       {/* Active Waiter Calls Alert Bar if any */}
-      {waiterCalls.length > 0 && (
+      {activeWaiterCalls.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
             <Bell className="w-4 h-4 text-amber-400 animate-bounce" />
-            <span>Appels en salle actifs ({waiterCalls.length})</span>
+            <span>Appels en salle actifs ({activeWaiterCalls.length})</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {waiterCalls.map(call => (
+            {activeWaiterCalls.map(call => (
               <div
                 key={call.id}
                 className={`p-3.5 rounded-2xl border shadow-md flex items-center justify-between gap-3 ${
@@ -301,7 +302,10 @@ export const KitchenDisplaySystem: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => resolveWaiterCall(call.id)}
+                  onClick={() => {
+                    soundFx.playTactileClick();
+                    resolveWaiterCall(call.id);
+                  }}
                   className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shrink-0 shadow-sm transition-all active:scale-95"
                 >
                   Traité ✓
