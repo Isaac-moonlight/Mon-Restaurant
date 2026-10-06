@@ -811,6 +811,21 @@ export const ClientMobileMenu: React.FC<ClientMobileMenuProps> = ({ onOpenStaffP
         <OrderStatusModal
           onClose={() => setShowOrderStatus(false)}
           onOpenWaiterCall={() => setShowWaiterCall(true)}
+          onOrderDessert={() => {
+            setShowOrderStatus(false);
+            setSelectedCategory('desserts');
+            const el = document.getElementById('carte-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          onResetTable={() => {
+            setShowOrderStatus(false);
+            setHasConfirmedTable(false);
+            try {
+              localStorage.removeItem('mon_resto_table_confirmed');
+            } catch {
+              // ignore
+            }
+          }}
         />
       )}
 
