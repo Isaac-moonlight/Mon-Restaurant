@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // Orders Collection
+    match /orders/{orderId} {
+      allow read: if true;
+      allow create: if isValidId(orderId) 
+                    && request.resource.data.tableNumber is number 
+                    && request.resource.data.status in ['received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
+      allow update: if isValidId(orderId) 
+                    && request.resource.data.status in ['received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
+      allow delete: if false;
+    }
+
+    // Waiter Calls Collection
+    match /waiterCalls/{callId} {
+      allow read: if true;
+      allow create: if isValidId(callId) 
+                    && request.resource.data.tableNumber is number 
+                    && request.resource.data.reason is string;
+      allow update: if isValidId(callId) 
+                    && request.resource.data.status in ['active', 'pending', 'resolved'];
+      allow delete: if true;
+    }
+
+    // Inventory Collection
+    match /inventory/{itemId} {
+      allow read: if true;
+      allow write: if isValidId(itemId);
+    }
+
+    // Restaurant Settings Collection
+    match /restaurantSettings/{settingId} {
+      allow read: if true;
+      allow write: if isValidId(settingId);
+    }
+
+    // Default deny for all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

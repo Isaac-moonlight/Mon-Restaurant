@@ -1,0 +1,97 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Restaurant order placed by customer or staff",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tableNumber": { "type": "number" },
+        "status": { "type": "string", "enum": ["received", "preparing", "ready", "served", "paid", "cancelled"] },
+        "total": { "type": "number" },
+        "totalHT": { "type": "number" },
+        "tipAmount": { "type": "number" },
+        "tipPercentage": { "type": "number" },
+        "customerName": { "type": "string" },
+        "customerCompany": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "paidAt": { "type": "string" },
+        "paymentMethod": { "type": "string" }
+      },
+      "required": ["id", "tableNumber", "status", "total", "createdAt"]
+    },
+    "WaiterCall": {
+      "title": "WaiterCall",
+      "description": "Call button pressed from a table requesting service",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tableNumber": { "type": "number" },
+        "reason": { "type": "string" },
+        "reasonLabel": { "type": "string" },
+        "paymentPreference": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "resolved"] },
+        "createdAt": { "type": "string" },
+        "resolvedAt": { "type": "string" }
+      },
+      "required": ["id", "tableNumber", "reason", "status", "createdAt"]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Stock count and 86 status for menu items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "name": { "type": "string" },
+        "isAvailable": { "type": "boolean" },
+        "currentStock": { "type": "number" },
+        "minStockAlert": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "itemId", "isAvailable", "currentStock"]
+    },
+    "RestaurantSettings": {
+      "title": "RestaurantSettings",
+      "description": "Global restaurant metadata, VAT rates, and billing details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "address": { "type": "string" },
+        "postalCode": { "type": "string" },
+        "city": { "type": "string" },
+        "siret": { "type": "string" },
+        "vatNumber": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "currency": { "type": "string" },
+        "tablesCount": { "type": "number" },
+        "pinCode": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "currency", "tablesCount"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Live orders synced between customers, kitchen and POS"
+    },
+    "/waiterCalls/{callId}": {
+      "schema": { "$ref": "#/entities/WaiterCall" },
+      "description": "Table assistance calls and bills requests"
+    },
+    "/inventory/{inventoryId}": {
+      "schema": { "$ref": "#/entities/InventoryItem" },
+      "description": "Real-time stock tracking and 86 items"
+    },
+    "/restaurantSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/RestaurantSettings" },
+      "description": "Restaurant profile, billing headers, and business settings"
+    }
+  }
+}

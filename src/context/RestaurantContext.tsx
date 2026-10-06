@@ -12,6 +12,18 @@ import {
 import { INITIAL_MENU, INITIAL_SETTINGS, INITIAL_FLOOR_TABLES } from '../data/initialData';
 import { calculateTVABreakdown } from '../utils/formatters';
 import { soundFx } from '../utils/audio';
+import {
+  subscribeToOrders,
+  subscribeToWaiterCalls,
+  subscribeToSettings,
+  subscribeToInventory,
+  syncOrderToFirestore,
+  updateOrderStatusInFirestore,
+  syncWaiterCallToFirestore,
+  resolveWaiterCallInFirestore,
+  syncSettingsToFirestore,
+  updateInventoryItemInFirestore,
+} from '../firebase';
 
 interface RestaurantContextType {
   settings: RestaurantSettings;
@@ -359,6 +371,64 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [floorTables]);
 
+  // Live Firestore Real-Time Subscriptions
+  useEffect(() => {
+    // 1. Orders live sync
+    const unsubOrders = subscribeToOrders(remoteOrders => {
+      if (remoteOrders && remoteOrders.length > 0) {
+        setOrders(prev => {
+          const map = new Map<string, Order>();
+          remoteOrders.forEach(o => map.set(o.id, o));
+          prev.forEach(o => {
+            if (!map.has(o.id)) map.set(o.id, o);
+          });
+          return Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        });
+      }
+    });
+
+    // 2. Waiter Calls live sync
+    const unsubCalls = subscribeToWaiterCalls(remoteCalls => {
+      if (remoteCalls && remoteCalls.length > 0) {
+        setWaiterCalls(remoteCalls);
+      }
+    });
+
+    // 3. Settings live sync
+    const unsubSettings = subscribeToSettings(remoteSettings => {
+      if (remoteSettings) {
+        setSettings(prev => ({ ...prev, ...remoteSettings }));
+      }
+    });
+
+    // 4. Inventory live sync
+    const unsubInventory = subscribeToInventory(stockMap => {
+      if (stockMap && Object.keys(stockMap).length > 0) {
+        setMenu(prev =>
+          prev.map(item => {
+            if (stockMap[item.id]) {
+              return {
+                ...item,
+                stockQuantity: stockMap[item.id].stock,
+                isAvailable: stockMap[item.id].isAvailable,
+              };
+            }
+            return item;
+          })
+        );
+      }
+    });
+
+    return () => {
+      unsubOrders();
+      unsubCalls();
+      unsubSettings();
+      unsubInventory();
+    };
+  }, []);
+
   // BroadcastChannel for cross-tab multi-screen real-time synchronization!
   useEffect(() => {
     if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
@@ -401,7 +471,11 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const updateSettings = useCallback((newSettings: Partial<RestaurantSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+    setSettings(prev => {
+      const merged = { ...prev, ...newSettings };
+      syncSettingsToFirestore(merged);
+      return merged;
+    });
   }, []);
 
   const toggleItemAvailability = useCallback((itemId: string) => {
@@ -409,6 +483,7 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const updated = prev.map(item => {
         if (item.id === itemId) {
           const nextState = !item.isAvailable;
+          updateInventoryItemInFirestore(itemId, item.stockQuantity, nextState);
           broadcastEvent({
             type: 'STOCK_UPDATED',
             itemId,
@@ -429,6 +504,7 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (item.id === itemId) {
           const newQty = Math.max(0, qty);
           const isAvail = newQty > 0;
+          updateInventoryItemInFirestore(itemId, newQty, isAvail);
           broadcastEvent({
             type: 'STOCK_UPDATED',
             itemId,
@@ -562,11 +638,12 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     clearCart();
 
-    // Sound chime and multi-screen sync
+    // Sound chime, multi-screen sync, and live Firestore sync
     if (soundEnabled) {
       soundFx.playKitchenOrderBell();
     }
     broadcastEvent({ type: 'NEW_ORDER', order: newOrder });
+    syncOrderToFirestore(newOrder);
 
     return newOrder;
   }, [clearCart, soundEnabled]);
@@ -590,6 +667,7 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         broadcastEvent({ type: 'ORDER_UPDATED', order: updated });
+        updateOrderStatusInFirestore(orderId, status);
         return updated;
       }
       return order;
@@ -620,6 +698,11 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
 
         broadcastEvent({ type: 'ORDER_UPDATED', order: updated });
+        updateOrderStatusInFirestore(orderId, order.status, {
+          paymentStatus: updated.paymentStatus,
+          paymentMethod: updated.paymentMethod,
+          splitDetails: updated.splitDetails,
+        });
         return updated;
       }
       return order;
@@ -659,6 +742,7 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     if (soundEnabled) soundFx.playWaiterCallAlert();
     broadcastEvent({ type: 'WAITER_CALL', call: newCall });
+    syncWaiterCallToFirestore(newCall);
   }, [currentTable, soundEnabled]);
 
   const resolveWaiterCall = useCallback((callId: string) => {
@@ -680,6 +764,7 @@ export const RestaurantProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
 
     broadcastEvent({ type: 'CALL_RESOLVED', callId });
+    resolveWaiterCallInFirestore(callId);
   }, []);
 
   const updateTableStatus = useCallback((tableId: number, status: FloorTable['status']) => {
